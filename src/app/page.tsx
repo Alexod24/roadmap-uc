@@ -1,69 +1,158 @@
-import Image from "next/image";
+'use client';
+
+import React, { useState, useEffect } from 'react';
+import { matematicaDiscreta2Data } from '@/data/courses/matematica-discreta-2';
+import { RoadmapTopNav } from '@/components/RoadmapTopNav';
+import { RoadmapSidebar } from '@/components/RoadmapSidebar';
+import { RoadmapVisualCanvas } from '@/components/RoadmapVisualCanvas';
+import { ResourceDrawer } from '@/components/ResourceDrawer';
+import { RoadmapNode, EvaluationMilestone, AcademicUnit } from '@/types/roadmap';
+
+const STORAGE_KEY = 'roadmap_uc_matematica_discreta_2_progress';
 
 export default function Home() {
+  const [completedNodeIds, setCompletedNodeIds] = useState<Set<string>>(new Set());
+  const [selectedMilestone, setSelectedMilestone] = useState<string | null>(null);
+  const [importanceFilter, setImportanceFilter] = useState<string | null>(null);
+
+  // State for the Right Slide-over Resource Drawer
+  const [isDrawerOpen, setIsDrawerOpen] = useState<boolean>(false);
+  const [drawerNode, setDrawerNode] = useState<RoadmapNode | null>(null);
+  const [drawerMilestone, setDrawerMilestone] = useState<EvaluationMilestone | null>(null);
+
+  // Load progress from localStorage
+  useEffect(() => {
+    try {
+      const saved = localStorage.getItem(STORAGE_KEY);
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        if (Array.isArray(parsed)) {
+          setCompletedNodeIds(new Set(parsed));
+        }
+      }
+    } catch (e) {
+      console.error('Error loading progress:', e);
+    }
+  }, []);
+
+  // Save progress
+  const handleToggleComplete = (nodeId: string) => {
+    setCompletedNodeIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(nodeId)) {
+        next.delete(nodeId);
+      } else {
+        next.add(nodeId);
+      }
+      try {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(Array.from(next)));
+      } catch (e) {
+        console.error('Error saving progress:', e);
+      }
+      return next;
+    });
+  };
+
+  // Open right drawer when clicking a topic/node
+  const handleOpenNodeDrawer = (node: RoadmapNode) => {
+    setDrawerNode(node);
+    setDrawerMilestone(null);
+    setIsDrawerOpen(true);
+  };
+
+  // Open right drawer when clicking an evaluation milestone
+  const handleOpenMilestoneDrawer = (milestone: EvaluationMilestone) => {
+    setDrawerMilestone(milestone);
+    setDrawerNode(null);
+    setIsDrawerOpen(true);
+  };
+
+  // Open right drawer when clicking a unit header
+  const handleOpenUnitDrawer = (unit: AcademicUnit) => {
+    if (unit.nodes.length > 0) {
+      handleOpenNodeDrawer(unit.nodes[0]);
+    }
+  };
+
+  const handleCloseDrawer = () => {
+    setIsDrawerOpen(false);
+  };
+
+  // Total nodes calculation
+  const allNodes = matematicaDiscreta2Data.units.flatMap((u) => u.nodes);
+  const totalCount = allNodes.length;
+  const completedCount = completedNodeIds.size;
+
+  // Filter units according to active milestone
+  const activeMilestoneObj = selectedMilestone
+    ? matematicaDiscreta2Data.milestones.find((m) => m.code === selectedMilestone)
+    : null;
+
+  const visibleUnits = matematicaDiscreta2Data.units.filter((unit) => {
+    if (!activeMilestoneObj) return true;
+    return activeMilestoneObj.target_units.includes(unit.id);
+  });
+
   return (
-    <div className="flex flex-col flex-1 items-center justify-center bg-zinc-50 font-sans dark:bg-black">
-      <main className="flex flex-1 w-full max-w-3xl flex-col items-center justify-between py-32 px-16 bg-white dark:bg-black sm:items-start">
-        <Image
-          className="dark:invert h-5 w-[100px]"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
-        />
-        <div className="flex flex-col items-center gap-6 text-center sm:items-start sm:text-left">
-          <h1 className="max-w-xs text-3xl font-semibold leading-10 tracking-tight text-black dark:text-zinc-50">
-            To get started, edit the{" "}
-            <code className="rounded bg-black/[.06] px-1.5 py-0.5 font-mono text-[0.9em] dark:bg-white/[.08]">
-              page.tsx
-            </code>{" "}
-            file.
-          </h1>
-          <p className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Learning
-            </a>{" "}
-            center.
-          </p>
+    <div className="min-h-screen bg-[#fbfbfb] text-zinc-900 flex flex-col font-sans">
+      {/* Top Banner Navigation (roadmap.sh style) */}
+      <RoadmapTopNav
+        milestones={matematicaDiscreta2Data.milestones}
+        selectedMilestone={selectedMilestone}
+        onSelectMilestone={setSelectedMilestone}
+        onOpenMilestoneDrawer={handleOpenMilestoneDrawer}
+        completedCount={completedCount}
+        totalCount={totalCount}
+      />
+
+      {/* Main Container: Sidebar + Roadmap Canvas */}
+      <main className="max-w-7xl w-full mx-auto px-4 sm:px-6 py-8 flex flex-col lg:flex-row gap-8 items-start">
+        {/* Left Sticky Sidebar */}
+        <div className="w-full lg:w-64 lg:sticky lg:top-6 shrink-0">
+          <RoadmapSidebar
+            importanceFilter={importanceFilter}
+            onSelectImportance={setImportanceFilter}
+          />
         </div>
-        <div className="flex flex-col gap-4 text-base font-medium sm:flex-row">
-          <a
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-foreground px-5 text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc] md:w-[158px]"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert h-[14px] w-4"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={14}
-            />
-            Deploy Now
-          </a>
-          <a
-            className="flex h-12 w-full items-center justify-center rounded-full border border-solid border-black/[.08] px-5 transition-colors hover:border-transparent hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-[#1a1a1a] md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Documentation
-          </a>
+
+        {/* Center/Right Interactive Visual Roadmap Tree */}
+        <div className="flex-1 w-full bg-white border-2 border-zinc-900 rounded-2xl p-4 sm:p-8 shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] min-h-[600px]">
+          <div className="flex items-center justify-between pb-4 mb-4 border-b border-zinc-200">
+            <div className="text-xs font-bold uppercase tracking-wider text-zinc-600">
+              Lienzo de Aprendizaje Jerárquico • Haz clic en un tema para ver recursos gratis
+            </div>
+            {selectedMilestone && (
+              <span className="text-xs bg-blue-100 text-blue-800 font-bold px-2.5 py-1 rounded border border-blue-300">
+                Filtrando por: Hito {selectedMilestone}
+              </span>
+            )}
+          </div>
+
+          <RoadmapVisualCanvas
+            units={visibleUnits}
+            completedNodeIds={completedNodeIds}
+            onToggleComplete={handleToggleComplete}
+            onSelectNode={handleOpenNodeDrawer}
+            onSelectUnit={handleOpenUnitDrawer}
+            filterImportance={importanceFilter}
+          />
         </div>
       </main>
+
+      {/* Slide-over Right Navbar (Drawer) for Community Resources and AI Tutor */}
+      <ResourceDrawer
+        isOpen={isDrawerOpen}
+        onClose={handleCloseDrawer}
+        node={drawerNode}
+        milestone={drawerMilestone}
+        isCompleted={drawerNode ? completedNodeIds.has(drawerNode.id) : false}
+        onToggleComplete={handleToggleComplete}
+      />
+
+      {/* Minimal Footer */}
+      <footer className="border-t border-zinc-200 bg-white py-6 text-center text-xs text-zinc-500 mt-auto">
+        Academic Roadmap Engine • Universidad Continental • Carrera de Ingeniería de Sistemas e Informática
+      </footer>
     </div>
   );
 }
