@@ -17,13 +17,17 @@ export const metadata: Metadata = {
   description: "Roadmap táctico de supervivencia y excelencia académica para Matemática Discreta 2 (UC). Enfoque 80/20, primeros principios, trampas típicas y preparación de hitos evaluativos C1, EP, C2 y EF.",
 };
 
-export default function RootLayout({ children }: LayoutProps<"/">) {
+import { ThemeProvider } from "@/context/ThemeContext";
+
+export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html
       lang="es"
-      className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
+      className={`${geistSans.variable} ${geistMono.variable} dark h-full antialiased`}
     >
-      <body className="min-h-full flex flex-col">{children}</body>
+      <body className="min-h-full flex flex-col bg-[#0d0f12] text-zinc-100 dark:bg-[#0d0f12] dark:text-zinc-100">
+        <ThemeProvider>{children}</ThemeProvider>
+      </body>
     </html>
   );
 }

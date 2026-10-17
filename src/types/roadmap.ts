@@ -19,6 +19,8 @@ export interface RoadmapNode {
   common_pitfall: string;
   tools: string[];
   action_challenge: string;
+  isOptional?: boolean;
+  checkColor?: 'purple' | 'green';
   community_resources?: CommunityResource[];
 }
 
@@ -41,6 +43,53 @@ export interface EvaluationMilestone {
   community_resources?: CommunityResource[];
 }
 
+export interface ProfessorReview {
+  id: string;
+  author_term: string;
+  campus: string;
+  grade_obtained?: string;
+  comment: string;
+  date: string;
+  upvotes: number;
+  tags: string[];
+}
+
+export interface ProfessorStats {
+  rating: number;
+  review_count: number;
+  approval_rate_percentage: number;
+  clarity_score: number;
+  difficulty_level: 'Baja' | 'Media' | 'Alta' | 'Muy Exigente';
+  strictness_score: number;
+  responsiveness_score: number;
+}
+
+export interface CourseProfessor {
+  id: string;
+  full_name: string;
+  title_degree: string;
+  avatar_url?: string;
+  is_active: boolean;
+  semesters_taught: string[];
+  campuses: string[];
+  modalities: ('Presencial' | 'Semipresencial' | 'A Distancia')[];
+  badge?: string;
+  teaching_style: {
+    summary: string;
+    methodology: string;
+    exam_style: string;
+    evaluation_criteria: string;
+    recommended_tools: string[];
+  };
+  recommendations: {
+    dos: string[];
+    donts: string[];
+    best_practice_quote: string;
+  };
+  stats: ProfessorStats;
+  reviews: ProfessorReview[];
+}
+
 export interface CourseRoadmap {
   subject_code: string;
   subject_name: string;
@@ -49,4 +98,5 @@ export interface CourseRoadmap {
   formula: string;
   milestones: EvaluationMilestone[];
   units: AcademicUnit[];
+  professors?: CourseProfessor[];
 }
